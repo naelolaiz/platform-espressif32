@@ -130,7 +130,7 @@ class Espressif32Platform(PlatformBase):
         if board.id == "esp32-s2-kaluga-1":
             supported_debug_tools.append("ftdi")
 
-        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3"):
+        if board.get("build.mcu", "") in ("esp32c3", "esp32c6", "esp32s3", "esp32s31"):
             supported_debug_tools.append("esp-builtin")
 
         upload_protocol = board.manifest.get("upload", {}).get("protocol")
@@ -153,6 +153,10 @@ class Espressif32Platform(PlatformBase):
             elif link in ("esp-prog", "ftdi"):
                 if board.id == "esp32-s2-kaluga-1":
                     openocd_interface = "ftdi/esp32s2_kaluga_v1"
+                elif board.get("build.mcu", "") == "esp32s31":
+                    # OpenOCD releases that support ESP32-S31 only ship the
+                    # renamed ESP-Prog config, without esp32_devkitj_v1.cfg
+                    openocd_interface = "ftdi/esp_ftdi"
                 else:
                     openocd_interface = "ftdi/esp32_devkitj_v1"
             elif link == "esp-bridge":
