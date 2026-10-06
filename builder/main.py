@@ -527,6 +527,15 @@ elif upload_protocol == "dfu":
 
 
 elif upload_protocol in debug_tools:
+    # OpenOCD releases that support ESP32-S31 open the file name as given and
+    # quote it themselves, so backslashes would act as escapes there; older
+    # ones need literal braces to keep the name intact through `eval`
+    if mcu == "esp32s31":
+        program_esp_file = "{%s}"
+        source_file = "${SOURCE.posix}"
+    else:
+        program_esp_file = "{{%s}}"
+        source_file = "$SOURCE"
     openocd_args = ["-d%d" % (2 if int(ARGUMENTS.get("PIOVERBOSE", 0)) else 1)]
     openocd_args.extend(
         debug_tools.get(upload_protocol).get("server").get("arguments", []))
@@ -535,8 +544,9 @@ elif upload_protocol in debug_tools:
             "-c",
             "adapter speed %s" % env.GetProjectOption("debug_speed", "5000"),
             "-c",
-            "program_esp {{$SOURCE}} %s verify"
+            "program_esp %s %s verify"
             % (
+                program_esp_file % source_file,
                 "$FS_START"
                 if "uploadfs" in COMMAND_LINE_TARGETS
                 else board.get(
@@ -550,8 +560,8 @@ elif upload_protocol in debug_tools:
             openocd_args.extend(
                 [
                     "-c",
-                    "program_esp {{%s}} %s verify"
-                    % (_to_unix_slashes(image[1]), image[0]),
+                    "program_esp %s %s verify"
+                    % (program_esp_file % _to_unix_slashes(image[1]), image[0]),
                 ]
             )
     openocd_args.extend(["-c", "reset run; shutdown"])
